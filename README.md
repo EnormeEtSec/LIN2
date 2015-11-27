@@ -72,3 +72,35 @@ L'installation de ce module est obligatoire en terme de sécurité. C'est une li
 ```sh
 apt-get install php5-gd php5-mcrypt
 ```
+
+___
+
+### CONFIGURATION NGINX
+Pour la configuration de base je me suis inspiré de ce tutoriel(anglais):
+* https://www.vultr.com/docs/setup-up-nginx-php-fpm-and-mariadb-on-debian-8
+
+Je commence par la configuration de nginx, en ouvrant le fichier nginx.conf
+qui se trouve dans:
+* /etc/nginx/
+
+```sh
+# cd /etc/nginx/
+# nano nginx.conf
+```
+Dans le fichier, je modifie les lignes ou se situe le user
+
+```sh
+user www-data;
+worker_processes 1;
+```
+Le worker_processes définit le nombre de processeur à utilister
+
+Dans ce meme fichier j'ai également modifié la ligne suivante:
+
+```sh
+access_log off;
+```
+Et j'ai rajouté cette ligne:
+```sh
+client_max_body_size 12m;
+```
