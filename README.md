@@ -48,3 +48,33 @@ apt-get update && apt-get install nginx
 
 >NGINX est un serveur asynchrone. Chaque requête est traitée par un processus dédié.
 Ce logiciel de serveur Web est utilisé pour les sites à fort trafic. En effet, son architecture permet de gérer plusieurs connections en même temps. Chaque requête est découpée en plusieurs mini-tâches. Cette architecture se traduit par des perforamces très élevées et une charge mémoire particulièrement faible comparé aux serveurs HTTP classiques comme Apache.    Source: Wikipedia
+
+### CONFIGURATION NGINX
+Pour la configuration de base je me suis inspiré de ce tutoriel(anglais):
+* https://www.vultr.com/docs/setup-up-nginx-php-fpm-and-mariadb-on-debian-8
+
+Je commence par la configuration de nginx, en ouvrant le fichier nginx.conf
+qui se trouve dans:
+* /etc/nginx/
+
+```sh
+# cd /etc/nginx/
+# nano nginx.conf
+```
+Dans le fichier, je modifie les lignes ou se situe le user
+
+```sh
+user www-data;
+worker_processes 1;
+```
+Le worker_processes définit le nombre de processeur à utilister
+
+Dans ce meme fichier j'ai également modifié la ligne suivante:
+
+```sh
+access_log off;
+```
+Et j'ai rajouté cette ligne:
+```sh
+client_max_body_size 12m;
+```
