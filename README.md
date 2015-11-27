@@ -75,32 +75,33 @@ apt-get install php5-gd php5-mcrypt
 
 ___
 
-### CONFIGURATION NGINX
-Pour la configuration de base je me suis inspiré de ce tutoriel(anglais):
-* https://www.vultr.com/docs/setup-up-nginx-php-fpm-and-mariadb-on-debian-8
+### CONFIGURATION
 
-Je commence par la configuration de nginx, en ouvrant le fichier nginx.conf
-qui se trouve dans:
-* /etc/nginx/
+#### Configuration NGINX
 
+Pour débuter la configuration de NGINX, ouvrez le fichier *nginx.conf* de la façon suivante:
 ```sh
-# cd /etc/nginx/
-# nano nginx.conf
+cd /etc/nginx/
+nano nginx.conf
 ```
-Dans le fichier, je modifie les lignes ou se situe le user
+Nous allons, comme indiqué dans la ligne de commande ci-dessus, modifier le fichier à l'aide de *nano*.
 
+À présent, modifier les lignes où se situe le *user* ainsi:
 ```sh
 user www-data;
 worker_processes 1;
 ```
-Le worker_processes définit le nombre de processeur à utilister
+La commande *worker_process* définit le nombre de processeur que le serveur va utiliser. Dans notre cas 1 seul suffira.
 
-Dans ce meme fichier j'ai également modifié la ligne suivante:
-
+Toujours dans nginx.conf, modifier la ligne:
+```sh
+access_log on;
+```
+par:
 ```sh
 access_log off;
 ```
-Et j'ai rajouté cette ligne:
+Puis rajoutez la ligne suivante au code qui permet de déterminer la taille maximalle des fichiers uploadé. La valeur par défault est 10m.
 ```sh
 client_max_body_size 12m;
 ```
