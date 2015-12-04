@@ -65,7 +65,7 @@ Désormais, il est temps d'installer MariaDB.
 ```sh
 apt-get install mariadb-server
 ```
-**IMPORTANT! :** Vous avez absolument besoin d'un mot de passe root particulièrement solide pour MariaDB. Souvez le quelque part car il faudra l'entré 2 fois lors de l'installation de MariaDB
+**IMPORTANT! :** Vous avez absolument besoin d'un mot de passe root particulièrement solide pour MariaDB. Sauvez le quelque part car il faudra l'entré 2 fois lors de l'installation de MariaDB
 
 #### PHP-mcrypt - Module de hashage PHP
 L'installation de ce module est obligatoire en terme de sécurité. C'est une librairie compilée en C qui permet d'appeler des fonctions en PHP pour chiffrer/hasher des mots de passe.
@@ -96,12 +96,49 @@ La commande *worker_process* définit le nombre de processeur que le serveur va 
 Toujours dans nginx.conf, modifier la ligne:
 ```sh
 access_log on;
-```
-par:
-```sh
+# par:
 access_log off;
 ```
-Puis rajoutez la ligne suivante au code qui permet de déterminer la taille maximalle des fichiers uploadé. La valeur par défault est 10m.
+Puis rajoutez la ligne suivante au code qui permet de déterminer la taille maximale des fichiers uploadé. La valeur par défault est 10m.
 ```sh
 client_max_body_size 12m;
+```
+
+Ensuite vous devez vous rendre dans le dossier */etc/nginx/conf.d*
+
+Dans ce dossier vous trouvez par default deux fichier *default.conf* qui vous permet d'avoir un fichier de referance pour les future configuration de vos domaines.
+
+le deuxième fichier est *example_ssl.conf* qui vous montre une possible configuration via le protocole ssl.
+
+Vous devez pour le bon fonctionnement de votre serveur, déplacer/renomer/supprimer ces 2 fichiers. Pour ensuite en crée un que vous nomerer comme bon vous semble, il doit juste se terminer par *.conf*, il vas servire à configurer votre serveur web.
+
+Chaque fichier que vous metterez dans ce dossier sera un nouveau serveur/domaine.
+
+*domaine1.conf*
+```sh
+server {
+        listen 80;
+        listen [::]:80 default_server ipv6only=on;
+
+        #chemin d'accee à votre dossier www
+        root /home/alain/www;
+        index index.html index.htm index.php;
+
+        # nom de votre domaine
+        server_name www.alaindomain.ch;
+
+        location / {
+                try_files $uri $uri/ /index.html;
+        }
+
+        #localisation de votre serveur php
+        location ~ \.php$
+        {       
+                try_files $uri =404;
+                fastcgi_pass   unix:/var/run/php5-fpm.sock;
+                fastcgi_param SCRIPT_FILENAME /home/alain/www$fastcgi_script_name;
+                include fastcgi_params;
+        }
+}
+
 ```
