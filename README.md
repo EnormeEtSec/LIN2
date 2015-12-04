@@ -171,6 +171,8 @@ Suivez est lisez scrupuleusement les étapes du scripte.
 5. Supprimer la base de donnée de test -> Y
 6. Recharger tous les privilèges -> Y
 
+Voici un aperçus de l’exécution du scripte :
+
 http://help.directadmin.com/item.php?id=208
 https://www.digitalocean.com/community/tutorials/how-to-secure-mysql-and-mariadb-databases-in-a-linux-vps
 https://www.linode.com/docs/security/securing-your-server
@@ -191,13 +193,13 @@ production environment.
 Remove anonymous users? [Y/n] Y
  ... Success!
 
-Normally, root should only be allowed to connect from 'localhost'.  This
+Normally, root should only be allowed to connect from "localhost".  This
 ensures that someone cannot guess at the root password from the network.
 
 Disallow root login remotely? [Y/n] Y
  ... Success!
 
-By default, MariaDB comes with a database named 'test' that anyone can
+By default, MariaDB comes with a database named "test" that anyone can
 access.  This is also intended only for testing, and should be removed
 before moving into a production environment.
 
@@ -217,4 +219,40 @@ All done!  If you ve completed all of the above steps, your MariaDB
 installation should now be secure.
 
 Thanks for using MariaDB!
+```
+
+Ensuite nous allons éditer le fichier de configuration de mysql :
+
+```sh
+nano /etc/mysql/my.cnf
+```
+
+Ajouter dans la section [mysqld] l'adresse du fichier de log
+
+```sh
+log=/var/log/mysql-logfile
+```
+Puis nous allons désactiver la fonction qui permet d'accéder au système de fichiers sous-jacents au sein de MySQL toujours dans la section [mysqld] :
+
+```sh
+local-infile=0
+```
+
+### Ajout d'un nouvel utilisateur
+
+Voici la commande pour créer un nouvel utilisateur :
+
+```sql
+CREATE USER 'newuser'@'localhost' IDENTIFIED BY 'password';
+```
+
+voici la commande pour créer la base de donnée
+
+```sql
+CREATE DATABASE newuser;
+```
+
+voici la commande pour ajouter les permission à l'utilisateur
+```sql
+GRANT SELECT,UPDATE,CREATE,DELETE,ALTER,DROP ON TABLE newUser.* TO 'newuser'@'localhost';
 ```
