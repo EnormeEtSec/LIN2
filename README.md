@@ -28,9 +28,59 @@ ___
 
 Après avoir configurer la machine virtuelle sous Linux Debian 8, installer SSH Server à l'aide de la commande suivante:
 ```sh
-apt-get install OpenSSH-server
+apt-get install openssh-server
+```
+##### Configuration
+Nous allons maintenant sécuriser est configurer le serveur ssh.
+
+Editer le fichier de configuration :
+```sh
+nano /etc/ssh/sshd_config
 ```
 
+```sh
+# Si vous ne trouvez pas le paramètre créer le.
+# Rechercher le aramètre PermitRootLogin est mettez-le a no
+PermitRootLogin no
+
+# Permet à ssh de rechercher la clef public dans le dossier home de l'utilisateur
+AuthorizedKeysFile      %h/.ssh/authorized_keys
+
+# Autoriser  la connexion avec les clefs publique/privé
+PubkeyAuthentication yes
+RSAAuthentication yes
+```
+##### Génération d'un jeu de clef RSA.
+Cette partie permet de générer le jeu de clef public / privée.
+
+```sh
+mkdir ~/.ssh
+chmod 700 ~/.ssh
+ssh-keygen -t rsa
+
+# Autoriser la clef génée
+# Exemple toto@debian
+ssh-copy-id <username>@<host>
+```
+#### Récupération de la clef depuis windows
+Afficher votre clef est copier la depuis putty :
+```sh
+cat ~/.ssh/id_rsa
+```
+Enregistrer cette clef privée non convertie dans un document de texte.
+
+Convertissez cette clef avec l'outil PuTTYgen :
+http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html
+
+```
+Conversion -> ImportKey -> votre clef privée importée.
+```
+Ensuite sauvegarder votre clef convertie : save private key.
+
+Une fois la clef convertie vous pouvez l'utiliser dans putty:
+```
+Category -> Connection -> SSH -> Auth : Private key file for authentication.
+```
 #### PuTTY - Client SSH
 Maintenant il est temps d'installer un client SSH sur toutes les machines avec lesquels on désire communiquer avec le serveur. Pour ce faire nous allons installer le service le plus utiliser: PuTTY.
 
