@@ -28,9 +28,59 @@ ___
 
 Après avoir configurer la machine virtuelle sous Linux Debian 8, installer SSH Server à l'aide de la commande suivante:
 ```sh
-apt-get install OpenSSH-server
+apt-get install openssh-server
+```
+##### Configuration
+Nous allons maintenant sécuriser est configurer le serveur ssh.
+
+Editer le fichier de configuration :
+```sh
+nano /etc/ssh/sshd_config
 ```
 
+```sh
+# Si vous ne trouvez pas le paramètre créer le.
+# Rechercher le aramètre PermitRootLogin est mettez-le a no
+PermitRootLogin no
+
+# Permet à ssh de rechercher la clef public dans le dossier home de l'utilisateur
+AuthorizedKeysFile      %h/.ssh/authorized_keys
+
+# Autoriser  la connexion avec les clefs publique/privé
+PubkeyAuthentication yes
+RSAAuthentication yes
+```
+##### Génération d'un jeu de clef RSA.
+Cette partie permet de générer le jeu de clef public / privée.
+
+```sh
+mkdir ~/.ssh
+chmod 700 ~/.ssh
+ssh-keygen -t rsa
+
+# Autoriser la clef génée
+# Exemple toto@debian
+ssh-copy-id <username>@<host>
+```
+#### Récupération de la clef depuis windows
+Afficher votre clef est copier la depuis putty :
+```sh
+cat ~/.ssh/id_rsa
+```
+Enregistrer cette clef privée non convertie dans un document de texte.
+
+Convertissez cette clef avec l'outil PuTTYgen :
+http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html
+
+```
+Conversion -> ImportKey -> votre clef privée importée.
+```
+Ensuite sauvegarder votre clef convertie : save private key.
+
+Une fois la clef convertie vous pouvez l'utiliser dans putty:
+```
+Category -> Connection -> SSH -> Auth : Private key file for authentication.
+```
 #### PuTTY - Client SSH
 Maintenant il est temps d'installer un client SSH sur toutes les machines avec lesquels on désire communiquer avec le serveur. Pour ce faire nous allons installer le service le plus utiliser: PuTTY.
 
@@ -62,6 +112,7 @@ apt-get install php5-fpm php5-mysqlnd
 #### MariaDB - MySQL
 Désormais, il est temps d'installer MariaDB.
 >MariaDB est une alternative à Oracle MySQL. Elle propose toutes les caractéristiques et options de la solution Oracle. On peut donc la considérer comme un remplacement complet de Oracle MySQL mais sans la marque et avec des particularités en plus.
+
 ```sh
 apt-get install mariadb-server
 ```
@@ -87,6 +138,7 @@ nano nginx.conf
 Nous allons, comme indiqué dans la ligne de commande ci-dessus, modifier le fichier à l'aide de *nano*.
 
 À présent, modifier les lignes où se situe le *user* ainsi:
+
 ```sh
 user www-data;
 worker_processes 1;
@@ -140,4 +192,104 @@ server {
                 include fastcgi_params;
         }
 }
+```
+#### Configuration MariaDB
+Nous allons maintenant configurer est sécurisé notre base de données. Tout d’abord nous allons exécuté le scripte **mysql_secure_installation**. Ce scripte vas nous guider à travers certaines procédures qui élimineront certaines valeurs par défaut qui sont dangereux à utiliser dans un environnement de production.
+
+```sh
+sudo mysql_secure_installation
+```
+Suivez est lisez scrupuleusement les étapes du scripte.
+
+1. Entrer le mot de passe pour l'utilisateur root
+2. Changer le mot de passe root si celui-ci n'est pas un mot de passe fort.
+3. Supprimer tous les utilisateur anonyme -> Y
+4. Interdire l'accès de root à distance ? -> Y
+5. Supprimer la base de donnée de test -> Y
+6. Recharger tous les privilèges -> Y
+
+Voici un aperçus de l’exécution du scripte :
+
+http://help.directadmin.com/item.php?id=208
+https://www.digitalocean.com/community/tutorials/how-to-secure-mysql-and-mariadb-databases-in-a-linux-vps
+https://www.linode.com/docs/security/securing-your-server
+
+```sh
+NOTE: RUNNING ALL PARTS OF THIS SCRIPT IS RECOMMENDED FOR ALL MariaDB
+      SERVERS IN PRODUCTION USE!  PLEASE READ EACH STEP CAREFULLY!
+
+Change the root password? [Y/n] n
+ ... skipping.
+
+By default, a MariaDB installation has an anonymous user, allowing anyone
+to log into MariaDB without having to have a user account created for
+them.  This is intended only for testing, and to make the installation
+go a bit smoother.  You should remove them before moving into a
+production environment.
+
+Remove anonymous users? [Y/n] Y
+ ... Success!
+
+Normally, root should only be allowed to connect from "localhost".  This
+ensures that someone cannot guess at the root password from the network.
+
+Disallow root login remotely? [Y/n] Y
+ ... Success!
+
+By default, MariaDB comes with a database named "test" that anyone can
+access.  This is also intended only for testing, and should be removed
+before moving into a production environment.
+
+Remove test database and access to it? [Y/n] Y
+ - Dropping test database...
+ ... Success!
+
+Reloading the privilege tables will ensure that all changes made so far
+will take effect immediately.
+
+Reload privilege tables now? [Y/n] Y
+ ... Success!
+
+Cleaning up...
+
+All done!  If you ve completed all of the above steps, your MariaDB
+installation should now be secure.
+
+Thanks for using MariaDB!
+```
+
+Ensuite nous allons éditer le fichier de configuration de mysql :
+
+```sh
+nano /etc/mysql/my.cnf
+```
+
+Ajouter dans la section [mysqld] l'adresse du fichier de log
+
+```sh
+log=/var/log/mysql-logfile
+```
+Puis nous allons désactiver la fonction qui permet d'accéder au système de fichiers sous-jacents au sein de MySQL toujours dans la section [mysqld] :
+
+```sh
+local-infile=0
+```
+
+### Ajout d'un nouvel utilisateur
+
+Voici la commande pour créer un nouvel utilisateur :
+
+```sql
+CREATE USER 'newuser'@'localhost' IDENTIFIED BY 'password';
+```
+
+voici la commande pour créer la base de donnée
+
+```sql
+CREATE DATABASE newuser;
+```
+
+voici la commande pour ajouter les permission à l'utilisateur
+```sql
+GRANT SELECT,UPDATE,CREATE,DELETE,ALTER,DROP ON TABLE newUser.* TO 'newuser'@'localhost';
 ```
