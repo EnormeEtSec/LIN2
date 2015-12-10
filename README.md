@@ -140,5 +140,4 @@ server {
                 include fastcgi_params;
         }
 }
-
 ```
