@@ -109,6 +109,36 @@ Ce logiciel de serveur Web est utilisé pour les sites à fort trafic. En effet,
 ```sh
 apt-get install php5-fpm php5-mysqlnd
 ```
+##### CONFIGURATION
+
+Premiérement nous commençons par crée et configurer un fichier qui se trouve dans */etc/php5/fpm/pool.d*.
+Pour la configuration je l'est nome *site_alain_php.conf* mais donné lui un nom qui se rapport au ficher de conf de nginx car il y a aussi un fichier de conf par utilisateurs.
+
+Cette configuration vas servire à séparer chaque service de chaque utilisateur, donc chaque user aura son service php-fpm
+
+Voici les config:
+
+*site_alain_php.conf*
+```sh
+[site_alain]
+
+user = alain
+group = alain
+
+# faire attention à la ligne suivant bien rajouter le "-alain"
+listen = /var/run/php5-fpm-alain.sock
+listen.owner = www-data
+listen.group = www-data
+php_admin_value[disable_functions] = exec,passthru,shell_exec,system
+php_admin_flag[allow_url_fopen] = off
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+chdir = /
+
+```
 
 #### MariaDB - MySQL
 Désormais, il est temps d'installer MariaDB.
@@ -156,8 +186,45 @@ Puis rajoutez la ligne suivante au code qui permet de déterminer la taille maxi
 ```sh
 client_max_body_size 12m;
 ```
+Resultat final:
 
-Ensuite vous devez vous rendre dans le dossier
+*nginx.conf*
+
+```sh
+user  www-data;
+worker_processes  1;
+
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log on;
+    client_max_body_size 12m;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+    #gzip  on;
+
+    include /etc/nginx/sites-available/*.conf;
+}
+
+```
 
 ```sh
 cd /etc/nginx/conf.d
@@ -294,6 +361,37 @@ voici la commande pour ajouter les permission à l'utilisateur :
 ```sql
 GRANT SELECT,UPDATE,CREATE,DELETE,ALTER,DROP ON TABLE newUser.* TO 'newuser'@'localhost';
 ```
+___
+
+### GESTION DES UTILISATEURS
+
+L'ajout des utilisateurs se ferra pour l'instant manulellement. Il sera donc nécessaire aux utilisateurs de nous contacter pour créer un compte.
+
+Pour ajouter un utilisateurs il faut se rendre dans le répertoire *home* en tant que *root*.
+```sh
+cd /home
+```
+Puis créer un utilisateur à l'aide de la commande suivante:
+```sh
+adduser lenomdutilisateur
+```
+>A noter qu'il faut faire attention aux règles RegEx pour l'ajout d'utilisateur. En effet, il est par exemple impossible d'utiliser des lettres majuscule.
+
+Une fois la commande passé, le système vous demandera de choisir un mot de passe pour cette utilisateur ainsi que d'entrer certaines données facultative comme le numéro de téléphone.
+
+Afin de garantir un accès exclusif à l'utilisateur à son répertoire personnel, faites un *chmod 750*. Cette commande de permission permettra aussi au groupe, auquel appartient le répertoire *home* de l'utilisateur, d'accéder aux fichiers de ce derniersans toutefois pouvoir les modifier.
+```sh
+chmod 750 nomrepertoirehomeutilisateur
+```
+Les autres utilisateurs ne pourront même pas voir le répertoire. Ils n'auront donc aucune connaissance de son existence.
+
+Désormais, ajoutez le groupe *www-data* au répertoire home de votre utilisateur:
+```sh
+chgrp www-data nomrepertoirehomeutilisateur
+```
+>A noter que le nom du répertoire home est le même que le nom de l'utilisateur.
+
+Félicitations! Vous avez créé et gérer les droits de votre premier utilisateur :neckbeard:
 
 #### Configuration iptables
 Nous allons configurer iptables afin d’avoir une sécurité forte. Certaines parties ont été volontairement commentées. Toutes les commandes seront exécutées en root.
