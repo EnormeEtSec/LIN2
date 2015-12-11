@@ -108,6 +108,36 @@ Ce logiciel de serveur Web est utilisé pour les sites à fort trafic. En effet,
 ```sh
 apt-get install php5-fpm php5-mysqlnd
 ```
+##### CONFIGURATION
+
+Premiérement nous commençons par crée et configurer un fichier qui se trouve dans */etc/php5/fpm/pool.d*.
+Pour la configuration je l'est nome *site_alain_php.conf* mais donné lui un nom qui se rapport au ficher de conf de nginx car il y a aussi un fichier de conf par utilisateurs.
+
+Cette configuration vas servire à séparer chaque service de chaque utilisateur, donc chaque user aura son service php-fpm
+
+Voici les config:
+
+*site_alain_php.conf*
+```sh
+[site_alain]
+
+user = alain
+group = alain
+
+# faire attention à la ligne suivant bien rajouter le "-alain"
+listen = /var/run/php5-fpm-alain.sock
+listen.owner = www-data
+listen.group = www-data
+php_admin_value[disable_functions] = exec,passthru,shell_exec,system
+php_admin_flag[allow_url_fopen] = off
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+chdir = /
+
+```
 
 #### MariaDB - MySQL
 Désormais, il est temps d'installer MariaDB.
@@ -155,8 +185,48 @@ Puis rajoutez la ligne suivante au code qui permet de déterminer la taille maxi
 ```sh
 client_max_body_size 12m;
 ```
+Resultat final:
 
-Ensuite vous devez vous rendre dans le dossier */etc/nginx/conf.d*
+*nginx.conf*
+
+```sh
+user  www-data;
+worker_processes  1;
+
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log on;
+    client_max_body_size 12m;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+    #gzip  on;
+
+    include /etc/nginx/sites-available/*.conf;
+}
+
+```
+
+
+Ensuite vous devez vous rendre dans le dossier */etc/nginx/sites-available/*
 
 Dans ce dossier vous trouvez par default deux fichier *default.conf* qui vous permet d'avoir un fichier de referance pour les future configuration de vos domaines.
 
