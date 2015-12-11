@@ -363,3 +363,36 @@ voici la commande pour ajouter les permission à l'utilisateur
 ```sql
 GRANT SELECT,UPDATE,CREATE,DELETE,ALTER,DROP ON TABLE newUser.* TO 'newuser'@'localhost';
 ```
+
+___
+
+### GESTION DES UTILISATEURS
+
+L'ajout des utilisateurs se ferra pour l'instant manulellement. Il sera donc nécessaire aux utilisateurs de nous contacter pour créer un compte.
+
+Pour ajouter un utilisateurs il faut se rendre dans le répertoire *home* en tant que *root*.
+```sh
+cd /home
+```
+Puis créer un utilisateur à l'aide de la commande suivante:
+```sh
+adduser lenomdutilisateur
+```
+>A noter qu'il faut faire attention aux règles RegEx pour l'ajout d'utilisateur. En effet, il est par exemple impossible d'utiliser des lettres majuscule.
+
+Une fois la commande passé, le système vous demandera de choisir un mot de passe pour cette utilisateur ainsi que d'entrer certaines données facultative comme le numéro de téléphone.
+
+Afin de garantir un accès exclusif à l'utilisateur à son répertoire personnel, faites un *chmod 750*. Cette commande de permission permettra aussi au groupe, auquel appartient le répertoire *home* de l'utilisateur, d'accéder aux fichiers de ce derniersans toutefois pouvoir les modifier.
+```sh
+chmod 750 nomrepertoirehomeutilisateur
+```
+Les autres utilisateurs ne pourront même pas voir le répertoire. Ils n'auront donc aucune connaissance de son existence.
+
+Désormais, ajoutez le groupe *www-data* au répertoire home de votre utilisateur:
+```sh
+chgrp www-data nomrepertoirehomeutilisateur
+```
+>A noter que le nom du répertoire home est le même que le nom de l'utilisateur.
+
+Félicitations! Vous avez créé et gérer les droits de votre premier utilisateur :neckbeard:
+
