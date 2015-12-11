@@ -112,21 +112,21 @@ apt-get install php5-fpm php5-mysqlnd
 ##### CONFIGURATION
 
 Premiérement nous commençons par crée et configurer un fichier qui se trouve dans */etc/php5/fpm/pool.d*.
-Pour la configuration je l'est nome *site_alain_php.conf* mais donné lui un nom qui se rapport au ficher de conf de nginx car il y a aussi un fichier de conf par utilisateurs.
+Pour la configuration je l'est nome *site_site1_php.conf* mais donné lui un nom qui se rapport au ficher de conf de nginx car il y a aussi un fichier de conf par utilisateurs.
 
 Cette configuration vas servire à séparer chaque service de chaque utilisateur, donc chaque user aura son service php-fpm
 
 Voici les config:
 
-*site_alain_php.conf*
+*site_site1_php.conf*
 ```sh
-[site_alain]
+[site_site1]
 
-user = alain
-group = alain
+user = site1
+group = site1
 
-# faire attention à la ligne suivant bien rajouter le "-alain"
-listen = /var/run/php5-fpm-alain.sock
+# faire attention à la ligne suivant bien rajouter le "-site1"
+listen = /var/run/php5-fpm-site1.sock
 listen.owner = www-data
 listen.group = www-data
 php_admin_value[disable_functions] = exec,passthru,shell_exec,system
@@ -139,6 +139,8 @@ pm.max_spare_servers = 3
 chdir = /
 
 ```
+L'utilisateur site1 doit bien évidement être créé.
+
 
 #### MariaDB - MySQL
 Désormais, il est temps d'installer MariaDB.
