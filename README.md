@@ -19,6 +19,7 @@ Les services et logiciels utilisés pour la réalisation de ce projet sont les s
   3. Serveur Web Nginx
   4. PHP-FPM
   5. MariaDB
+  6. iptables
 
 ___
 
@@ -156,7 +157,11 @@ Puis rajoutez la ligne suivante au code qui permet de déterminer la taille maxi
 client_max_body_size 12m;
 ```
 
-Ensuite vous devez vous rendre dans le dossier */etc/nginx/conf.d*
+Ensuite vous devez vous rendre dans le dossier
+
+```sh
+cd /etc/nginx/conf.d
+```
 
 Dans ce dossier vous trouvez par default deux fichier *default.conf* qui vous permet d'avoir un fichier de referance pour les future configuration de vos domaines.
 
@@ -209,10 +214,6 @@ Suivez est lisez scrupuleusement les étapes du scripte.
 6. Recharger tous les privilèges -> Y
 
 Voici un aperçus de l’exécution du scripte :
-
-http://help.directadmin.com/item.php?id=208
-https://www.digitalocean.com/community/tutorials/how-to-secure-mysql-and-mariadb-databases-in-a-linux-vps
-https://www.linode.com/docs/security/securing-your-server
 
 ```sh
 NOTE: RUNNING ALL PARTS OF THIS SCRIPT IS RECOMMENDED FOR ALL MariaDB
@@ -289,7 +290,195 @@ voici la commande pour créer la base de donnée
 CREATE DATABASE newuser;
 ```
 
-voici la commande pour ajouter les permission à l'utilisateur
+voici la commande pour ajouter les permission à l'utilisateur :
 ```sql
 GRANT SELECT,UPDATE,CREATE,DELETE,ALTER,DROP ON TABLE newUser.* TO 'newuser'@'localhost';
 ```
+
+#### Configuration iptables
+Nous allons configurer iptables afin d’avoir une sécurité forte. Certaines parties ont été volontairement commentées. Toutes les commandes seront exécutées en root.
+
+Si vous souhaitez empêcher toutes communication entre les services via l’adresse de bouclage ( localhost ) ainsi que d’empêcher l’usurpation d’identité. Dé commenter la variable
+```sh
+SPOOFIP
+```
+Ainsi que toutes la section du code :
+```sh
+# Log and block spoofed ips
+```
+
+```sh
+#!/bin/bash
+IPT="/sbin/iptables"
+
+#### IPS ######
+# Get server public ip
+SERVER_IP=$(ifconfig eth0 | grep 'inet addr:' | awk -F'inet addr:' '{ print $2}' | awk '{ print $1}')
+#LB1_IP="172.17.103.231"
+#LB2_IP="204.54.1.2"
+
+# Do some smart logic so that we can use damm script on LB2 too
+#OTHER_LB=""
+#SERVER_IP=""
+#[[ "$SERVER_IP" == "$LB1_IP" ]] && OTHER_LB="$LB2_IP" || OTHER_LB="$LB1_IP"
+#[[ "$OTHER_LB" == "$LB2_IP" ]] && OPP_LB="$LB1_IP" || OPP_LB="$LB2_IP"
+
+#### FILES #####
+BLOCKED_IP_TDB=/root/.fw/blocked.ip.txt
+#SPOOFIP="127.0.0.0/8 192.168.0.0/16 172.16.0.0/12 10.0.0.0/8 169.254.0.0/16 0.0.0.0/8 240.0.0.0/4 255.255.255.255/32 168.254.0.0/16 224.0.0.0/4 240.0.0.0/5 248.0.0.0/5 192.0.2.0/24"
+BADIPS=$( [[ -f ${BLOCKED_IP_TDB} ]] && egrep -v "^#|^$" ${BLOCKED_IP_TDB})
+
+### Interfaces ###
+PUB_IF="eth0"   # public interface
+LO_IF="lo"      # loopback
+
+### start firewall ###
+echo "Setting LB1 $(hostname) Firewall..."
+
+# DROP and close everything
+$IPT -P INPUT DROP
+$IPT -P OUTPUT DROP
+$IPT -P FORWARD DROP
+
+# Unlimited lo access
+$IPT -A INPUT -i ${LO_IF} -j ACCEPT
+$IPT -A OUTPUT -o ${LO_IF} -j ACCEPT
+
+
+# Drop sync
+$IPT -A INPUT -i ${PUB_IF} -p tcp ! --syn -m state --state NEW -j DROP
+
+# Drop Fragments
+$IPT -A INPUT -i ${PUB_IF} -f -j DROP
+
+$IPT  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags ALL FIN,URG,PSH -j DROP
+$IPT  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags ALL ALL -j DROP
+
+# Drop NULL packets
+$IPT  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags ALL NONE -m limit --limit 5/m --limit-burst 7 -j LOG --log-prefix " NULL Packets "
+$IPT  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags ALL NONE -j DROP
+
+$IPT  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
+
+# Drop XMAS
+$IPT  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags SYN,FIN SYN,FIN -m limit --limit 5/m --limit-burst 7 -j LOG --log-prefix " XMAS Packets "
+$IPT  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP
+
+# Drop FIN packet scans
+$IPT  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags FIN,ACK FIN -m limit --limit 5/m --limit-burst 7 -j LOG --log-prefix " Fin Packets Scan "
+$IPT  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags FIN,ACK FIN -j DROP
+
+$IPT  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
+
+# Log and get rid of broadcast / multicast and invalid
+$IPT  -A INPUT -i ${PUB_IF} -m pkttype --pkt-type broadcast -j LOG --log-prefix " Broadcast "
+$IPT  -A INPUT -i ${PUB_IF} -m pkttype --pkt-type broadcast -j DROP
+
+$IPT  -A INPUT -i ${PUB_IF} -m pkttype --pkt-type multicast -j LOG --log-prefix " Multicast "
+$IPT  -A INPUT -i ${PUB_IF} -m pkttype --pkt-type multicast -j DROP
+
+$IPT  -A INPUT -i ${PUB_IF} -m state --state INVALID -j LOG --log-prefix " Invalid "
+$IPT  -A INPUT -i ${PUB_IF} -m state --state INVALID -j DROP
+
+# Log and block spoofed ips
+#$IPT -N spooflist
+#for ipblock in $SPOOFIP
+#do
+#$IPT -A spooflist -i ${PUB_IF} -s $ipblock -j LOG --log-prefix " SPOOF List Block "
+#$IPT -A spooflist -i ${PUB_IF} -s $ipblock -j DROP
+#done
+#$IPT -I INPUT -j spooflist
+#$IPT -I OUTPUT -j spooflist
+#$IPT -I FORWARD -j spooflist
+# Log and block spoofed ips END
+
+# SSH
+$IPT -A INPUT -i ${PUB_IF}  -p tcp --dport 22 -m state --state NEW,ESTABLISHED -j ACCEPT
+$IPT -A OUTPUT -o ${PUB_IF}  -p tcp --sport 22 -m state --state ESTABLISHED -j ACCEPT
+
+
+# allow incoming ICMP ping pong stuff
+$IPT -A INPUT -i ${PUB_IF} -p icmp --icmp-type 8 -s 0/0 -m state --state NEW,ESTABLISHED,RELATED -m limit --limit 30/sec  -j ACCEPT
+$IPT -A OUTPUT -o ${PUB_IF} -p icmp --icmp-type 0 -d 0/0 -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# allow incoming HTTP port 80
+$IPT -A INPUT -i ${PUB_IF} -p tcp -s 0/0 --sport 1024:65535 --dport 80 -m state --state NEW,ESTABLISHED -j ACCEPT
+$IPT -A OUTPUT -o ${PUB_IF} -p tcp --sport 80 -d 0/0 --dport 1024:65535 -m state --state ESTABLISHED -j ACCEPT
+
+
+# allow outgoing ntp
+$IPT -A OUTPUT -o ${PUB_IF} -p udp --dport 123 -m state --state NEW,ESTABLISHED -j ACCEPT
+$IPT -A INPUT -i ${PUB_IF} -p udp --sport 123 -m state --state ESTABLISHED -j ACCEPT
+
+# allow outgoing smtp
+$IPT -A OUTPUT -o ${PUB_IF} -p tcp --dport 25 -m state --state NEW,ESTABLISHED -j ACCEPT
+$IPT -A INPUT -i ${PUB_IF} -p tcp --sport 25 -m state --state ESTABLISHED -j ACCEPT
+
+### add your other rules here ####
+
+#######################
+# drop and log everything else
+$IPT -A INPUT -m limit --limit 5/m --limit-burst 7 -j LOG --log-prefix " DEFAULT DROP "
+$IPT -A INPUT -j DROP
+
+#######################
+# Allow user
+#######################
+
+$IPT -A INPUT -i ${PUB_IF} -p tcp -s 0/0 --sport 1024:65535 --dport 90 -m state --state NEW,ESTABLISHED -j ACCEPT
+$IPT -A OUTPUT -o ${PUB_IF} -p tcp --sport 80 -d 0/0 --dport 1024:65535 -m state --state ESTABLISHED -j ACCEPT
+
+
+exit 0
+```
+
+Rendez le scripte exécutable :
+
+```sh
+# Rendre exécutable
+Chmod u+x ./nom_du_scripte
+
+# Exécuter le scripte
+./nom_du_scripte
+```
+
+
+Règle pour autoriser un nouveau client :
+```sh
+# Ajouter un nouveau client pour le port : XXXXX
+# Remplacer XXXXX par le port du client exemple 80.
+iptables -A INPUT -i eth0 -p tcp -s 0/0 --sport 1024:65535 --dport XXXXX -m state --state NEW,ESTABLISHED -j ACCEPT
+iptables -A OUTPUT -o eth0 -p tcp --sport XXXXX -d 0/0 --dport 1024:65535 -m state --state ESTABLISHED -j ACCEPT
+```
+
+Sauvegarder la configuration iptables afin de la rendre persistante :
+Installer le paquet :
+```sh
+apt-get install iptables-persistent
+```
+Ensuite pour sauvegarder les régles enregistrer les dans le fichier :
+```sh
+iptables-save > /etc/iptables/rules
+```
+
+Recharger le parefeu au suite a un démarage :
+```sh
+iptables-restore < /etc/iptables/rules
+```
+
+Créer un scripte qui se lancera automatiquement au démarrage du serveur :
+```sh
+#! /bin/sh
+iptables-restore < /etc/iptables/rules
+```
+
+Enregistrer le dans le dossier sous le nom de ***iptables-persistent.sh***
+```sh
+/etc/init.d
+```
+# Ajouter les droits d’exécution au fichier
+```sh
+chmod 755 /etc/init.d/iptables-persistent.sh
+```
+
+Maintenant à chaque démarrage iptables sera configuré en fonction du fichier iptables-persistent.sh
