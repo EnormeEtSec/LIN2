@@ -3,7 +3,7 @@
 Auteur :
 
 * Alain Pichonnat
-* Christophe Kalmann
+* Christophe Kalman
 * Sébastien Martin
 
 ## OBJECTIFS & INFORMATIONS
@@ -388,27 +388,27 @@ local-infile=0
 
 ### Ajout d'un nouvel utilisateur
 
-Voici la commande pour créer un nouvel utilisateur :
+Voici la commande pour créer un nouvel utilisateur **newuser**:
 
 ```sql
 CREATE USER 'newuser'@'localhost' IDENTIFIED BY 'password';
 ```
 
-voici la commande pour créer la base de donnée
+voici la commande pour créer la base de donnée **testdatabase**
 
 ```sql
-CREATE DATABASE newuser;
+CREATE DATABASE testdatabase;
 ```
 
-voici la commande pour ajouter les permission à l'utilisateur :
+voici la commande pour ajouter les permission à l'utilisateur **newuser**:
 
 ```sql
-GRANT SELECT,UPDATE,CREATE,DELETE,ALTER,DROP ON TABLE newUser.* TO 'newuser'@'localhost';
+GRANT SELECT,UPDATE,CREATE,DELETE,ALTER,DROP ON TABLE testdatabase.* TO 'newuser'@'localhost';
 ```
 
 ### GESTION DES UTILISATEURS
 
-L'ajout des utilisateurs se ferra pour l'instant manulellement. Il sera donc nécessaire aux utilisateurs de nous contacter pour créer un compte.
+L'ajout des utilisateurs se ferra pour l'instant manuellement. Il sera donc nécessaire aux utilisateurs de nous contacter pour créer un compte.
 
 Pour ajouter un utilisateurs il faut se rendre dans le répertoire *home* en tant que *root*.
 
@@ -605,7 +605,7 @@ iptables -A INPUT -i eth0 -p tcp -s 0/0 --sport 1024:65535 --dport XXXXX -m stat
 iptables -A OUTPUT -o eth0 -p tcp --sport XXXXX -d 0/0 --dport 1024:65535 -m state --state ESTABLISHED -j ACCEPT
 ```
 
-Sauvegarder la configuration iptables afin de la rendre persistante :
+#### Sauvegarder la configuration iptables afin de la rendre persistante
 
 Installer le paquet :
 
@@ -613,7 +613,7 @@ Installer le paquet :
 apt-get install iptables-persistent
 ```
 
-Ensuite pour sauvegarder les régles enregistrer les dans le fichier :
+Ensuite pour sauvegarder les régles enregistrer les dans le fichier *rules* :
 
 ```sh
 iptables-save > /etc/iptables/rules
