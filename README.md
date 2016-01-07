@@ -2,7 +2,7 @@
 ###### Alain Pichonnat, Christophe Kalmann & Sébastien Martin
 ___
 
-### OBJECTIFS & INFORMATIONS
+## OBJECTIFS & INFORMATIONS
 
 Le but de ce projet et la mise en place d'une machine Linux "from scratch". C'est à dire sans interface graphique. Le serveur doit permettre d'héberger plusieurs sites web en isolant les utilisateurs des autres afin de rendre impossible l'accès aux fichiers et aux bases de données des autres utilisateurs.
 
@@ -23,18 +23,20 @@ Les services et logiciels utilisés pour la réalisation de ce projet sont les s
 
 ___
 
-### INSTALLATION DES SERVICES
+## INSTALLATION DES SERVICES
 
-#### OpenSSH-Server
+### OpenSSH-Server
 
 Après avoir configurer la machine virtuelle sous Linux Debian 8, installer SSH Server à l'aide de la commande suivante:
 ```sh
 apt-get install openssh-server
 ```
-##### Configuration
+#### Configuration
+
 Nous allons maintenant sécuriser est configurer le serveur ssh.
 
 Editer le fichier de configuration :
+
 ```sh
 nano /etc/ssh/sshd_config
 ```
@@ -51,7 +53,9 @@ AuthorizedKeysFile      %h/.ssh/authorized_keys
 PubkeyAuthentication yes
 RSAAuthentication yes
 ```
-##### Génération d'un jeu de clef RSA.
+
+#### Génération d'un jeu de clef RSA.
+
 Cette partie permet de générer le jeu de clef public / privée.
 
 ```sh
@@ -63,11 +67,15 @@ ssh-keygen -t rsa
 # Exemple toto@debian
 ssh-copy-id <username>@<host>
 ```
+
 #### Récupération de la clef depuis windows
+
 Afficher votre clef est copier la depuis putty :
+
 ```sh
 cat ~/.ssh/id_rsa
 ```
+
 Enregistrer cette clef privée non convertie dans un document de texte.
 
 Convertissez cette clef avec l'outil PuTTYgen :
@@ -76,23 +84,29 @@ http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html
 ```
 Conversion -> ImportKey -> votre clef privée importée.
 ```
+
 Ensuite sauvegarder votre clef convertie : save private key.
 
 Une fois la clef convertie vous pouvez l'utiliser dans putty:
+
 ```
 Category -> Connection -> SSH -> Auth : Private key file for authentication.
 ```
-#### PuTTY - Client SSH
+### PuTTY - Client SSH
+
 Maintenant il est temps d'installer un client SSH sur toutes les machines avec lesquels on désire communiquer avec le serveur. Pour ce faire nous allons installer le service le plus utiliser: PuTTY.
 
 Le logiciel est téléchargeable à l'adresse suivante:
+
 ```sh
 http://www.putty.org/
 ```
 Pour cette marche à suivre, nous allons executer toutes les commandes en tant que "root".
 
-#### NGINX - Serveur
+### NGINX - Serveur
+
 Désormais, nous allons installer la dernière version d'NGINX directement depuis de répertoire Debian d'NGINX officiel.
+
 ```sh
 wget http://nginx.org/keys/nginx_signing.key
 apt-key add nginx_signing.key
@@ -104,21 +118,23 @@ apt-get update && apt-get install nginx
 >NGINX est un serveur asynchrone. Chaque requête est traitée par un processus dédié.
 Ce logiciel de serveur Web est utilisé pour les sites à fort trafic. En effet, son architecture permet de gérer plusieurs connections en même temps. Chaque requête est découpée en plusieurs mini-tâches. Cette architecture se traduit par des perforamces très élevées et une charge mémoire particulièrement faible comparé aux serveurs HTTP classiques comme Apache.    Source: Wikipedia
 
-#### PHP-FPM
+### PHP-FPM
 À présent, nous allons installer PHP-FPM. NGINX n'a pas de module PHP intégré pour réduire son empreinte mémoire. Voilà pourquoi il faut installer PHP Fast Process Manager.
 ```sh
 apt-get install php5-fpm php5-mysqlnd
 ```
-##### CONFIGURATION
+#### CONFIGURATION
 
 Premiérement nous commençons par crée et configurer un fichier qui se trouve dans */etc/php5/fpm/pool.d*.
+
 Pour la configuration je l'est nome *site_site1_php.conf* mais donné lui un nom qui se rapport au ficher de conf de nginx car il y a aussi un fichier de conf par utilisateurs.
 
-Cette configuration vas servire à séparer chaque service de chaque utilisateur, donc chaque user aura son service php-fpm
+Cette configuration va servire à séparer chaque service de chaque utilisateur, donc chaque user aura son service php-fpm.
 
 Voici les config:
 
 *site_site1_php.conf*
+
 ```sh
 [site_site1]
 
@@ -137,37 +153,40 @@ pm.start_servers = 2
 pm.min_spare_servers = 1
 pm.max_spare_servers = 3
 chdir = /
-
 ```
+
 L'utilisateur site1 doit bien évidement être créé.
 
+### MariaDB - MySQL
 
-#### MariaDB - MySQL
 Désormais, il est temps d'installer MariaDB.
 >MariaDB est une alternative à Oracle MySQL. Elle propose toutes les caractéristiques et options de la solution Oracle. On peut donc la considérer comme un remplacement complet de Oracle MySQL mais sans la marque et avec des particularités en plus.
 
 ```sh
 apt-get install mariadb-server
 ```
+
 **IMPORTANT! :** Vous avez absolument besoin d'un mot de passe root particulièrement solide pour MariaDB. Sauvez le quelque part car il faudra l'entré 2 fois lors de l'installation de MariaDB
 
-#### PHP-mcrypt - Module de hashage PHP
+### PHP-mcrypt - Module de hashage PHP
+
 L'installation de ce module est obligatoire en terme de sécurité. C'est une librairie compilée en C qui permet d'appeler des fonctions en PHP pour chiffrer/hasher des mots de passe.
+
 ```sh
 apt-get install php5-gd php5-mcrypt
 ```
 
-___
+## CONFIGURATION
 
-### CONFIGURATION
-
-#### Configuration NGINX
+### Configuration NGINX
 
 Pour débuter la configuration de NGINX, ouvrez le fichier *nginx.conf* de la façon suivante:
+
 ```sh
 cd /etc/nginx/
 nano nginx.conf
 ```
+
 Nous allons, comme indiqué dans la ligne de commande ci-dessus, modifier le fichier à l'aide de *nano*.
 
 À présent, modifier les lignes où se situe le *user* ainsi:
@@ -176,21 +195,24 @@ Nous allons, comme indiqué dans la ligne de commande ci-dessus, modifier le fic
 user www-data;
 worker_processes 1;
 ```
+
 La commande *worker_process* définit le nombre de processeur que le serveur va utiliser. Dans notre cas 1 seul suffira.
 
 Toujours dans nginx.conf, modifier la ligne:
+
 ```sh
 access_log on;
 # par:
 access_log off;
 ```
+
 Puis rajoutez la ligne suivante au code qui permet de déterminer la taille maximale des fichiers uploadé. La valeur par défault est 10m.
+
 ```sh
 client_max_body_size 12m;
 ```
-Resultat final:
 
-*nginx.conf*
+Resultat final pour le fichier **nginx.conf** :
 
 ```sh
 user  www-data;
@@ -227,6 +249,7 @@ http {
 }
 
 ```
+Déplacez-vous dans le dossier **conf.d** :
 
 ```sh
 cd /etc/nginx/conf.d
@@ -234,13 +257,14 @@ cd /etc/nginx/conf.d
 
 Dans ce dossier vous trouvez par default deux fichier *default.conf* qui vous permet d'avoir un fichier de referance pour les future configuration de vos domaines.
 
-le deuxième fichier est *example_ssl.conf* qui vous montre une possible configuration via le protocole ssl.
+Le deuxième fichier est *example_ssl.conf* qui vous montre une possible configuration via le protocole ssl.
 
 Vous devez pour le bon fonctionnement de votre serveur, déplacer/renomer/supprimer ces 2 fichiers. Pour ensuite en crée un que vous nomerer comme bon vous semble, il doit juste se terminer par *.conf*, il vas servire à configurer votre serveur web.
 
 Chaque fichier que vous metterez dans ce dossier sera un nouveau serveur/domaine.
 
-*domaine1.conf*
+Voici un exemple de fichier : **domaine1.conf**.
+
 ```sh
 server {
         listen 80;
@@ -267,12 +291,15 @@ server {
         }
 }
 ```
-#### Configuration MariaDB
+
+### Configuration MariaDB
+
 Nous allons maintenant configurer est sécurisé notre base de données. Tout d’abord nous allons exécuté le scripte **mysql_secure_installation**. Ce scripte vas nous guider à travers certaines procédures qui élimineront certaines valeurs par défaut qui sont dangereux à utiliser dans un environnement de production.
 
 ```sh
 sudo mysql_secure_installation
 ```
+
 Suivez est lisez scrupuleusement les étapes du scripte.
 
 1. Entrer le mot de passe pour l'utilisateur root
@@ -334,11 +361,12 @@ Ensuite nous allons éditer le fichier de configuration de mysql :
 nano /etc/mysql/my.cnf
 ```
 
-Ajouter dans la section [mysqld] l'adresse du fichier de log
+Ajoutez dans la section [mysqld] l'adresse du fichier de log
 
 ```sh
 log=/var/log/mysql-logfile
 ```
+
 Puis nous allons désactiver la fonction qui permet d'accéder au système de fichiers sous-jacents au sein de MySQL toujours dans la section [mysqld] :
 
 ```sh
@@ -360,49 +388,61 @@ CREATE DATABASE newuser;
 ```
 
 voici la commande pour ajouter les permission à l'utilisateur :
+
 ```sql
 GRANT SELECT,UPDATE,CREATE,DELETE,ALTER,DROP ON TABLE newUser.* TO 'newuser'@'localhost';
 ```
-___
 
 ### GESTION DES UTILISATEURS
 
 L'ajout des utilisateurs se ferra pour l'instant manulellement. Il sera donc nécessaire aux utilisateurs de nous contacter pour créer un compte.
 
 Pour ajouter un utilisateurs il faut se rendre dans le répertoire *home* en tant que *root*.
+
 ```sh
 cd /home
 ```
+
 Puis créer un utilisateur à l'aide de la commande suivante:
+
 ```sh
 adduser lenomdutilisateur
 ```
->A noter qu'il faut faire attention aux règles RegEx pour l'ajout d'utilisateur. En effet, il est par exemple impossible d'utiliser des lettres majuscule.
+
+> A noter qu'il faut faire attention aux règles RegEx pour l'ajout d'utilisateur. En effet, il est par exemple impossible d'utiliser des lettres majuscule.
 
 Une fois la commande passé, le système vous demandera de choisir un mot de passe pour cette utilisateur ainsi que d'entrer certaines données facultative comme le numéro de téléphone.
 
 Afin de garantir un accès exclusif à l'utilisateur à son répertoire personnel, faites un *chmod 750*. Cette commande de permission permettra aussi au groupe, auquel appartient le répertoire *home* de l'utilisateur, d'accéder aux fichiers de ce derniersans toutefois pouvoir les modifier.
+
 ```sh
 chmod 750 nomrepertoirehomeutilisateur
 ```
+
 Les autres utilisateurs ne pourront même pas voir le répertoire. Ils n'auront donc aucune connaissance de son existence.
 
 Désormais, ajoutez le groupe *www-data* au répertoire home de votre utilisateur:
+
 ```sh
 chgrp www-data nomrepertoirehomeutilisateur
 ```
->A noter que le nom du répertoire home est le même que le nom de l'utilisateur.
+
+> A noter que le nom du répertoire home est le même que le nom de l'utilisateur.
 
 Félicitations! Vous avez créé et gérer les droits de votre premier utilisateur :neckbeard:
 
-#### Configuration iptables
+### Configuration iptables
+
 Nous allons configurer iptables afin d’avoir une sécurité forte. Certaines parties ont été volontairement commentées. Toutes les commandes seront exécutées en root.
 
 Si vous souhaitez empêcher toutes communication entre les services via l’adresse de bouclage ( localhost ) ainsi que d’empêcher l’usurpation d’identité. Dé commenter la variable
+
 ```sh
 SPOOFIP
 ```
+
 Ainsi que toutes la section du code :
+
 ```sh
 # Log and block spoofed ips
 ```
@@ -544,6 +584,7 @@ Chmod u+x ./nom_du_scripte
 
 
 Règle pour autoriser un nouveau client :
+
 ```sh
 # Ajouter un nouveau client pour le port : XXXXX
 # Remplacer XXXXX par le port du client exemple 80.
@@ -552,31 +593,39 @@ iptables -A OUTPUT -o eth0 -p tcp --sport XXXXX -d 0/0 --dport 1024:65535 -m sta
 ```
 
 Sauvegarder la configuration iptables afin de la rendre persistante :
+
 Installer le paquet :
+
 ```sh
 apt-get install iptables-persistent
 ```
+
 Ensuite pour sauvegarder les régles enregistrer les dans le fichier :
+
 ```sh
 iptables-save > /etc/iptables/rules
 ```
 
 Recharger le parefeu au suite a un démarage :
+
 ```sh
 iptables-restore < /etc/iptables/rules
 ```
 
 Créer un scripte qui se lancera automatiquement au démarrage du serveur :
+
 ```sh
 #! /bin/sh
 iptables-restore < /etc/iptables/rules
 ```
 
-Enregistrer le dans le dossier sous le nom de ***iptables-persistent.sh***
+Enregistrer le dans le dossier sous le nom de **iptables-persistent.sh**
+
 ```sh
 /etc/init.d
 ```
-# Ajouter les droits d’exécution au fichier
+#### Ajouter les droits d’exécution au fichier
+
 ```sh
 chmod 755 /etc/init.d/iptables-persistent.sh
 ```
