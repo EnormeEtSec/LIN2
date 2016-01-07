@@ -1,6 +1,10 @@
 # LIN2 - Création d'un serveur WEB
-###### Alain Pichonnat, Christophe Kalmann & Sébastien Martin
-___
+
+Auteur :
+
+* Alain Pichonnat
+* Christophe Kalmann
+* Sébastien Martin
 
 ## OBJECTIFS & INFORMATIONS
 
@@ -21,7 +25,16 @@ Les services et logiciels utilisés pour la réalisation de ce projet sont les s
   5. MariaDB
   6. iptables
 
-___
+## Configuration matériel
+
+Configurtaion de la machine virtuelle :
+
+* Distribution : Debian v8.0.0
+* Processeur : 2 CPU de 3.30 Ghz
+* Mémoire vive : 2 Gb
+* Disque dur : 20 Gb
+
+Concernant l'installation de debian, nous laisson tous les paramètres par défaut.  
 
 ## INSTALLATION DES SERVICES
 
@@ -160,7 +173,7 @@ L'utilisateur site1 doit bien évidement être créé.
 ### MariaDB - MySQL
 
 Désormais, il est temps d'installer MariaDB.
->MariaDB est une alternative à Oracle MySQL. Elle propose toutes les caractéristiques et options de la solution Oracle. On peut donc la considérer comme un remplacement complet de Oracle MySQL mais sans la marque et avec des particularités en plus.
+> MariaDB est une alternative à Oracle MySQL. Elle propose toutes les caractéristiques et options de la solution Oracle. On peut donc la considérer comme un remplacement complet de Oracle MySQL mais sans la marque et avec des particularités en plus.
 
 ```sh
 apt-get install mariadb-server
