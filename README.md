@@ -29,7 +29,7 @@ Les services et logiciels utilisés pour la réalisation de ce projet sont les s
 
 Configurtaion de la machine virtuelle :
 
-* Distribution : Debian v8.0.0
+* Distribution : Debian v8.0.0 64bits
 * Processeur : 2 CPU de 3.30 Ghz
 * Mémoire vive : 2 Gb
 * Disque dur : 20 Gb
