@@ -33,6 +33,7 @@ Configurtaion de la machine virtuelle :
 * Processeur : 2 CPU de 3.30 Ghz
 * Mémoire vive : 2 Gb
 * Disque dur : 20 Gb
+* Carte réseau
 
 Concernant l'installation de debian, nous laisson tous les paramètres par défaut.  
 
